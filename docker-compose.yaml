@@ -1,0 +1,22 @@
+version: '3.3'
+
+services:
+  crawler:
+    image: hlystovea/reservoirs_bot:latest
+    container_name: crawler
+    restart: always
+    command: python3 crawler.py
+    env_file:
+      - ./.env
+  bot:
+    image: hlystovea/reservoirs_bot:latest
+    container_name: bot
+    restart: always
+    command: python3 bot.py
+    env_file:
+      - ./.env
+
+networks:
+  default:
+    name: reservoirs_network
+    driver: bridge
