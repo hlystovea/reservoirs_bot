@@ -25,10 +25,10 @@ class Situation(BaseModel):
     date: date
     reservoir_id: int
     level: float
-    free_capacity: Optional[float]
-    inflow: Optional[float]
-    outflow: Optional[float]
-    spillway: Optional[float]
+    free_capacity: Optional[int]
+    inflow: Optional[int]
+    outflow: Optional[int]
+    spillway: Optional[int]
 
     class Config:
         orm_mode = True
