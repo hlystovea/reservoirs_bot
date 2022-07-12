@@ -84,6 +84,8 @@ async def plot_graph(
             SituationModel.reservoir==reservoir
         ).where(
             SituationModel.date.between(min(period), max(period))
+        ).order_by(
+            SituationModel.date
         )
     )
     if len(water_situations) == 0:
