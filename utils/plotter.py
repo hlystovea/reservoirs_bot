@@ -1,12 +1,10 @@
 import datetime as dt
 import io
 import logging
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
-from peewee_async import Manager
+from peewee_async import AsyncQueryWrapper, Manager
 
 from bot.exceptions import NoDataError
 from db.models import database, ReservoirModel, SituationModel
@@ -16,61 +14,80 @@ objects = Manager(database)
 objects.database.allow_sync = logging.ERROR
 
 
-ylabel = {
+Y_LABEL = {
     'level': 'Высота над уровнем моря, м',
-    'inflow': 'Q, м\u00b3/с',
-    'outflow': 'Q, м\u00b3/с',
-    'spillway': 'Q, м\u00b3/с',
+    'flows': 'Q, м\u00b3/с',
 }
 
-legend = {
-    'level': 'УВБ (м)',
-    'inflow': 'Приток (м\u00b3/c)',
-    'outflow': 'Средний сброс (м\u00b3/c)',
-    'spillway': 'Холостой сброс (м\u00b3/с)',
+PARAMS = {
+    'level': {
+        'color': '#ff9f40',
+        'label': 'УВБ (м)',
+    },
+    'inflow': {
+        'color': '#ff6384',
+        'label': 'Приток (м\u00b3/c)',
+    },
+    'outflow': {
+        'color': '#36a2eb',
+        'label': 'Сброс (м\u00b3/c)',
+    },
+    'spillway': {
+        'color': '#9966ff',
+        'label': 'Холостой сброс (м\u00b3/с)',
+    }
 }
 
 
-async def plotter(
-    x: List[float], y: List[float], title: str, command: str
+def plotter(
+    data: Iterable, title: str, ylabel: str, lines: List[str]
 ) -> io.BytesIO:
-    fig = plt.figure(figsize=(6, 4))
-    ax = fig.add_subplot(111)
-    ax.plot(x, y, color=(0, 0.4, 0.9, 0.7), linewidth=0.8)
 
-    ax.legend([legend.get(command)], fontsize=9)
-    ax.set_title(title, fontsize=10)
-    ax.set_ylabel(ylabel.get(command), fontsize=9)
+    _, ax = plt.subplots(figsize=(6, 4))
 
-    ax.grid(True, 'major', 'both')
-    ax.xaxis.set_major_locator(
-        MultipleLocator(len(x) // 6 if len(x) > 6 else 1)
-    )
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m.%Y'))
+    values = []
+    dates = [i.date for i in data]
+    for line in lines:
+        values = [getattr(i, line) for i in data]
+        plt.plot(dates, values, **PARAMS[line], lw=1)
+        ax.fill_between(dates, values, 0, color=PARAMS[line]['color'], alpha=0.2)  # noqa(E501)
 
-    ax.tick_params('x', labelrotation=20, labelsize=8)
-    ax.tick_params('y', labelrotation=0, labelsize=8)
+    ax.legend(labelcolor='#444444')
+    ax.figure.autofmt_xdate()
+    ax.tick_params(labelsize='small', labelcolor='#444444')
+    ax.set_xlim(min(dates), max(dates))
+    ax.set_ylim(min(values), max(values)) if len(lines) == 1 else ax.set_ylim(0)  # noqa(E501)
+
+    plt.subplots_adjust(left=0.15)
+    plt.ylabel(ylabel, color='#444444')
+    plt.title(title)
+    plt.grid(True)
 
     pic = io.BytesIO()
-    plt.savefig(pic, format='png')
+    plt.savefig(pic, format='png', dpi=200)
     plt.close()
     pic.seek(0)
     return pic
 
 
-def save_csv(reservoir, timeperiod):
-    # Формируем списки с координатами
-    coordinates = reservoir.get_levels(timeperiod)
-    x = [value[0] for value in coordinates]
-    y = [value[1] for value in coordinates]
-    record = ''
-    for i in range(len(x)):
-        record += str(x[i])
-        record += ';' + str(y[i])
-        record += '\n'
-    f = open('level.csv', 'w')
-    f.write(record)
-    f.close()
+async def get_water_situations(
+    reservoir: ReservoirModel, period: Tuple[dt.date]
+) -> AsyncQueryWrapper:
+
+    water_situations = await objects.execute(SituationModel.select(
+        ).where(
+            SituationModel.reservoir == reservoir
+        ).where(
+            SituationModel.date.between(min(period), max(period))
+        ).order_by(
+            SituationModel.date
+        )
+    )
+
+    if len(water_situations) == 0:
+        raise NoDataError('Нет данных за указанный период.')
+
+    return water_situations
 
 
 async def plot_graph(
@@ -79,21 +96,18 @@ async def plot_graph(
     """
     This function return a photo with a graph
     """
-    water_situations = await objects.execute(SituationModel.select(
-        ).where(
-            SituationModel.reservoir==reservoir
-        ).where(
-            SituationModel.date.between(min(period), max(period))
-        ).order_by(
-            SituationModel.date
-        )
-    )
-    if len(water_situations) == 0:
-        raise NoDataError('Нет данных за указанный период.')
+    match command:
+        case 'level':
+            lines = ['level']
+        case 'flows':
+            lines = ['inflow', 'outflow', 'spillway']
+        case _:
+            raise KeyError
+
+    water_situations = await get_water_situations(reservoir, period)
 
     date1, date2 = water_situations[0].date, water_situations[-1].date
-    x = [ws.date for ws in water_situations]
-    y = [getattr(ws, command) for ws in water_situations]
+
     title = (
         f'{reservoir.name} водохранилище\n'
         f'ФПУ={reservoir.force_level} м, '
@@ -104,4 +118,4 @@ async def plot_graph(
         f'График за период с {date1.strftime("%d.%m.%Y")} '
         f'по {date2.strftime("%d.%m.%Y")}'
     )
-    return await plotter(x, y, title, command), caption
+    return plotter(water_situations, title, Y_LABEL[command], lines), caption

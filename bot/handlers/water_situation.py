@@ -51,9 +51,14 @@ async def period(
         pic, caption = await plot_graph(
             reservoir, data['command'], (date1, date2)
         )
-    except (KeyError, TypeError, NoDataError) as error:
+    except (KeyError, TypeError) as error:
         logging.error(repr(error))
         await query.message.edit_text('Упс.. что-то пошло не так.')
+    except NoDataError as error:
+        logging.error(repr(error))
+        await query.message.edit_text(
+            'Нет данных за указанный период времени.'
+        )
     else:
         await query.message.answer_photo(
             pic, caption, disable_notification=True
