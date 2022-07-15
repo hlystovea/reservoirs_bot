@@ -43,25 +43,26 @@ def plotter(
     data: Iterable, title: str, ylabel: str, lines: List[str]
 ) -> io.BytesIO:
 
-    _, ax = plt.subplots(figsize=(6, 4))
+    fig, ax = plt.subplots(figsize=(6, 4))
+    fig.subplots_adjust(left=0.15)
+    fig.suptitle(title.split('\n')[0], x=0.525)
 
     values = []
     dates = [i.date for i in data]
     for line in lines:
         values = [getattr(i, line) for i in data]
-        plt.plot(dates, values, **PARAMS[line], lw=1)
+        ax.plot(dates, values, **PARAMS[line], lw=1)
         ax.fill_between(dates, values, 0, color=PARAMS[line]['color'], alpha=0.2)  # noqa(E501)
 
-    ax.legend(labelcolor='#444444')
     ax.figure.autofmt_xdate()
     ax.tick_params(labelsize='small', labelcolor='#444444')
     ax.set_xlim(min(dates), max(dates))
     ax.set_ylim(min(values), max(values)) if len(lines) == 1 else ax.set_ylim(0)  # noqa(E501)
 
-    plt.subplots_adjust(left=0.15)
-    plt.ylabel(ylabel, color='#444444')
-    plt.title(title)
-    plt.grid(True)
+    ax.legend(labelcolor='#444444')
+    ax.set_ylabel(ylabel, color='#444444')
+    ax.set_title(title.split('\n')[-1], size='small', color='#444444')
+    ax.grid(True)
 
     pic = io.BytesIO()
     plt.savefig(pic, format='png', dpi=200)
