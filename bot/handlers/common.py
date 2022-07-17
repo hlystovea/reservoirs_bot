@@ -60,10 +60,9 @@ async def start(message: types.Message, state: FSMContext):
     """
     await state.finish()
     text = (
-        'Привет! Я бот, который по данным [сайта РусГидро]'
-        '(http://www.rushydro.ru/hydrology/informer) строит графики '
-        'гидрологического режима водохранилищ ГЭС России. '
-        'Чтобы начать, нажмите *"Показать меню"*'
+        'Привет! Я бот, который поможет тебе получить данные '
+        'о гидрологической обстановке на водохранилищах ГЭС России. '
+        'Чтобы начать, нажми *"Показать меню"*'
     )
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row('Показать меню')
