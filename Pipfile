@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 aiohttp = "*"
 pydantic = "*"
-bs4 = "*"
 aiogram = "*"
 matplotlib = "*"
 peewee = "*"
