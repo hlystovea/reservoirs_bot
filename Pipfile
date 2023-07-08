@@ -11,6 +11,7 @@ matplotlib = "*"
 peewee = "*"
 peewee-async = "*"
 aiopg = "*"
+pydantic-settings = "*"
 
 [dev-packages]
 

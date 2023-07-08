@@ -1,16 +1,14 @@
 import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
-from os import environ
 
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
+from bot.config import bot_settings
 from bot.handlers.common import register_common_handlers
 from bot.handlers.water_situation import register_water_situation_handlers
-
-BOT_TOKEN = environ.get('BOT_TOKEN')
 
 
 logging.basicConfig(
@@ -24,7 +22,7 @@ logging.basicConfig(
 
 
 async def main():
-    bot = Bot(token=BOT_TOKEN)
+    bot = Bot(token=bot_settings.bot_token)
     dp = Dispatcher(bot, storage=MemoryStorage())
 
     commands = [
