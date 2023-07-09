@@ -4,13 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-aiohttp = "*"
 pydantic = "*"
 aiogram = "*"
 matplotlib = "*"
-peewee = "*"
-peewee-async = "*"
-aiopg = "*"
 pydantic-settings = "*"
 
 [dev-packages]

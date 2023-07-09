@@ -1,7 +1,7 @@
-from db.models import ReservoirModel
+from services.schemas import Reservoir
 
 
-def reservoir_info(reservoir: ReservoirModel):
+def reservoir_info(reservoir: Reservoir):
     return (
         f'*{reservoir.name} водохранилище:*\n'
         f'НПУ {reservoir.normal_level} м\n'

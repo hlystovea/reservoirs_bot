@@ -1,21 +1,15 @@
 import datetime as dt
 import logging
-from typing import Dict
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from dateutil.parser import parse, ParserError
-from peewee_async import Manager
 
 from bot.exceptions import NoDataError
 from bot.handlers.common import MainState
 from bot.markups import main_cb
-from db.models import database, ReservoirModel
-from utils.plotter import plot_graph
-
-
-objects = Manager(database)
-objects.database.allow_sync = logging.ERROR
+from services.api_handlers import get_reservoir
+from services.plotter import plot_graph
 
 
 def register_water_situation_handlers(dp: Dispatcher):
@@ -30,7 +24,7 @@ def register_water_situation_handlers(dp: Dispatcher):
 
 async def period(
     query: types.CallbackQuery,
-    callback_data: Dict[str, str],
+    callback_data: dict[str, str],
     state: FSMContext,
 ):
     """
@@ -45,7 +39,7 @@ async def period(
         )
     try:
         data = await state.get_data()
-        reservoir = await objects.get(ReservoirModel, slug=data['reservoir'])
+        reservoir = await get_reservoir(id=data['reservoir'])
         date2 = dt.date.today()
         date1 = date2 - dt.timedelta(int(period))
         pic, caption = await plot_graph(
@@ -97,7 +91,7 @@ async def input_date2(message: types.Message, state: FSMContext):
     try:
         date = parse(message.text)
         data = await state.get_data()
-        reservoir = await objects.get(ReservoirModel, slug=data['reservoir'])
+        reservoir = await get_reservoir(id=data['reservoir'])
         pic, caption = await plot_graph(
             reservoir, data['command'], (data['date1'], date.date())
         )

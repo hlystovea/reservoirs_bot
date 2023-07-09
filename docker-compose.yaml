@@ -4,12 +4,7 @@ services:
   bot:
     image: hlystovea/reservoirs_bot:latest
     container_name: bot
-    restart: always
+    restart: unless-stopped
     command: python3 bot.py
     env_file:
       - ./.env
-
-networks:
-  default:
-    name: reservoirs_network
-    driver: bridge

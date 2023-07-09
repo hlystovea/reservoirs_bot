@@ -1,20 +1,14 @@
 import logging
-from typing import Dict
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from peewee_async import Manager
 
 from bot.exceptions import NoDataError
 from bot.markups import (command_buttons, get_markup_with_items,
                          get_markup_with_objs, main_cb, time_buttons)
 from bot.utils import reservoir_info
-from db.models import database, RegionModel, ReservoirModel, SituationModel
-
-
-objects = Manager(database)
-objects.database.allow_sync = logging.ERROR
+from services.api_handlers import get_regions, get_reservoir, get_reservoirs
 
 
 class MainState(StatesGroup):
@@ -79,7 +73,7 @@ async def menu(message: types.Message, state: FSMContext):
     This handler will be called when user sends text "Показать меню"
     """
     await state.finish()
-    regions = await objects.execute(RegionModel.select())
+    regions = await get_regions()
     markup = get_markup_with_objs(action='region', objs=regions)
     await message.answer(
         text='Выберите регион:',
@@ -93,7 +87,7 @@ async def menu(message: types.Message, state: FSMContext):
 
 async def back(
     query: types.CallbackQuery,
-    callback_data: Dict[str, str],
+    callback_data: dict[str, str],
     state: FSMContext,
 ):
     """
@@ -101,7 +95,7 @@ async def back(
     query with "start" action
     """
     await state.finish()
-    regions = await objects.execute(RegionModel.select())
+    regions = await get_regions()
     markup = get_markup_with_objs(action='region', objs=regions)
     await query.message.edit_text(
         text='Выберите регион:', reply_markup=markup
@@ -112,7 +106,7 @@ async def back(
 
 async def regions_handler(
     query: types.CallbackQuery,
-    callback_data: Dict[str, str],
+    callback_data: dict[str, str],
     state: FSMContext,
 ):
     """
@@ -120,14 +114,9 @@ async def regions_handler(
     query with "region" action
     """
     await state.update_data(region=callback_data['answer'])
-    reservoirs = await objects.execute(ReservoirModel.select(
-        ).join(
-            RegionModel, on=(ReservoirModel.region==RegionModel.id)
-        ).where(
-            ReservoirModel.region.slug==callback_data['answer']
-        )
-    )
-    markup = get_markup_with_objs(action='reservoir', objs=reservoirs)
+    reservoirs = await get_reservoirs(region=callback_data['answer'])
+    markup = get_markup_with_objs(
+        action='reservoir', objs=reservoirs, lookup='id')
     back_button = types.InlineKeyboardButton(
         'Назад', callback_data=main_cb.new(action='start', answer='_')
     )
@@ -141,7 +130,7 @@ async def regions_handler(
 
 async def reservoirs_handler(
     query: types.CallbackQuery,
-    callback_data: Dict[str, str],
+    callback_data: dict[str, str],
     state: FSMContext,
 ):
     """
@@ -163,7 +152,7 @@ async def reservoirs_handler(
 
 async def plot_command_handler(
     query: types.CallbackQuery,
-    callback_data: Dict[str, str],
+    callback_data: dict[str, str],
     state: FSMContext,
 ):
     """
@@ -189,7 +178,7 @@ async def plot_command_handler(
 
 async def info_command_handler(
     query: types.CallbackQuery,
-    callback_data: Dict[str, str],
+    callback_data: dict[str, str],
     state: FSMContext,
 ):
     """
@@ -199,7 +188,7 @@ async def info_command_handler(
     data = await state.get_data()
 
     try:
-        reservoir = await objects.get(ReservoirModel, slug=data['reservoir'])
+        reservoir = await get_reservoir(id=data['reservoir'])
         await query.message.edit_text(
             reservoir_info(reservoir), parse_mode='Markdown'
         )
