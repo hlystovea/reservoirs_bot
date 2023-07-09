@@ -1,17 +1,12 @@
 import datetime as dt
 import io
-import logging
-from typing import Iterable, List, Tuple
+from typing import Iterable
 
 import matplotlib.pyplot as plt
-from peewee_async import AsyncQueryWrapper, Manager
 
 from bot.exceptions import NoDataError
-from db.models import database, ReservoirModel, SituationModel
-
-
-objects = Manager(database)
-objects.database.allow_sync = logging.ERROR
+from services.api_handlers import get_situations
+from services.schemas import Reservoir, Situation
 
 
 Y_LABEL = {
@@ -40,7 +35,7 @@ PARAMS = {
 
 
 def plotter(
-    data: Iterable, title: str, ylabel: str, lines: List[str]
+    data: Iterable, title: str, ylabel: str, lines: list[str]
 ) -> io.BytesIO:
 
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -71,28 +66,8 @@ def plotter(
     return pic
 
 
-async def get_water_situations(
-    reservoir: ReservoirModel, period: Tuple[dt.date]
-) -> AsyncQueryWrapper:
-
-    water_situations = await objects.execute(SituationModel.select(
-        ).where(
-            SituationModel.reservoir == reservoir
-        ).where(
-            SituationModel.date.between(min(period), max(period))
-        ).order_by(
-            SituationModel.date
-        )
-    )
-
-    if len(water_situations) == 0:
-        raise NoDataError('Нет данных за указанный период.')
-
-    return water_situations
-
-
 async def plot_graph(
-    reservoir: ReservoirModel, command: str, period: Tuple[dt.date]
+    reservoir: Reservoir, command: str, period: tuple[dt.date]
 ):
     """
     This function return a photo with a graph
@@ -105,7 +80,13 @@ async def plot_graph(
         case _:
             raise KeyError
 
-    water_situations = await get_water_situations(reservoir, period)
+    water_situations = await get_situations(
+        reservoir_id=reservoir.id,
+        start=min(period),
+        end=max(period))
+
+    if len(water_situations) == 0:
+        raise NoDataError('Нет данных за указанный период.')
 
     date1, date2 = water_situations[0].date, water_situations[-1].date
 

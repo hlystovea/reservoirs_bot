@@ -1,9 +1,7 @@
-from typing import Dict, List, Union
-
 from aiogram import types
 from aiogram.utils.callback_data import CallbackData
 
-from db.models import RegionModel, ReservoirModel
+from services.schemas import Region, Reservoir
 
 
 time_buttons = {
@@ -25,22 +23,32 @@ main_cb = CallbackData('main', 'action', 'answer')
 
 
 def get_markup_with_objs(
-    action: str, objs: List[Union[ReservoirModel, RegionModel]]
+    action: str,
+    objs: list[Region | Reservoir],
+    lookup: str = 'slug'
 ):
     markup = types.InlineKeyboardMarkup()
     for obj in objs:
         button = types.InlineKeyboardButton(
-            obj.name, callback_data=main_cb.new(action=action, answer=obj.slug)
+            obj.name,
+            callback_data=main_cb.new(
+                action=action,
+                answer=getattr(obj, lookup)
+            )
         )
         markup.add(button)
     return markup
 
 
-def get_markup_with_items(action: str, items: Dict):
+def get_markup_with_items(action: str, items: dict):
     markup = types.InlineKeyboardMarkup()
     for key, value in items.items():
         button = types.InlineKeyboardButton(
-            value, callback_data=main_cb.new(action=action, answer=key)
+            value, 
+            callback_data=main_cb.new(
+                action=action,
+                answer=key
+            )
         )
         markup.add(button)
     return markup
