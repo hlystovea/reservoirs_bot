@@ -1,9 +1,20 @@
 from datetime import date
 
+import orjson
 from pydantic import BaseModel
 
 
-class Region(BaseModel):
+def orjson_dumps(v, *, default):
+    return orjson.dumps(v, default=default).decode()
+
+
+class BaseOrjsonModel(BaseModel):
+    class Config:
+        json_loads = orjson.loads
+        json_dumps = orjson_dumps
+
+
+class Region(BaseOrjsonModel):
     id: int
     url: str
     reservoirs: str
@@ -11,7 +22,7 @@ class Region(BaseModel):
     slug: str
 
 
-class Reservoir(BaseModel):
+class Reservoir(BaseOrjsonModel):
     id: int
     url: str
     name: str
@@ -30,7 +41,7 @@ class Reservoir(BaseModel):
     max_depth: float | None
 
 
-class Situation(BaseModel):
+class Situation(BaseOrjsonModel):
     date: date
     level: float
     inflow: int | None
