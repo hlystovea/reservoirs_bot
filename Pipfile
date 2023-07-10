@@ -8,6 +8,7 @@ pydantic = "*"
 aiogram = "*"
 matplotlib = "*"
 pydantic-settings = "*"
+orjson = "*"
 
 [dev-packages]
 

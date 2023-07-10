@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from bot.exceptions import NoDataError
 from services.api_handlers import get_situations
-from services.schemas import Reservoir, Situation
+from services.schemas import Reservoir
 
 
 Y_LABEL = {
