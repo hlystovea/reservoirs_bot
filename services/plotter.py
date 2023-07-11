@@ -3,6 +3,7 @@ import io
 from typing import Iterable
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from bot.exceptions import NoDataError
 from services.api_handlers import get_situations
@@ -44,8 +45,9 @@ def plotter(
 
     values = []
     dates = [i.date for i in data]
+
     for line in lines:
-        values = [getattr(i, line) for i in data]
+        values = np.array([getattr(i, line) for i in data]).astype(np.float32)
         ax.plot(dates, values, **PARAMS[line], lw=1)
         ax.fill_between(dates, values, 0, color=PARAMS[line]['color'], alpha=0.2)  # noqa(E501)
 
