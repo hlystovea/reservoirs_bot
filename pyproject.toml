@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "reservoirs-bot"
+version = "0.2.0"
+description = "Telegram bot of the Reservoirs project"
+authors = ["Evgeniy Khlystov <hlystovea@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = []
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "*"
+aiogram = "*"
+matplotlib = "*"
+pydantic-settings = "*"
+orjson = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
