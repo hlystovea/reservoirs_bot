@@ -59,11 +59,11 @@ jobs:
           script: |
             cd reservoirs_bot
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/reservoirs_bot:latest
-            sudo docker-compose stop
-            sudo docker-compose rm bot
+            sudo docker compose stop
+            sudo docker compose rm bot
             echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} > .env
             echo API_URL=${{ secrets.API_URL }} >> .env
-            sudo docker-compose up -d
+            sudo docker compose up -d
 
   send_message:
     runs-on: ubuntu-latest
